@@ -1,6 +1,4 @@
-// ========== 通知設定 ==========
-
-// 5時前は前日を取得
+// ========== 通知設定 & API取得 ==========
 function getEffectiveDateString() {
   const now = new Date();
   if (now.getHours() < 5) {
@@ -8,7 +6,6 @@ function getEffectiveDateString() {
   }
   return now.toISOString().slice(0, 10).replace(/-/g, "");
 }
-
 const today = getEffectiveDateString();
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
@@ -18,36 +15,16 @@ const tabAll = document.getElementById("tab-all");
 const tabOn = document.getElementById("tab-on");
 const tabGirls = document.getElementById("tab-girls");
 const tabFlat = document.getElementById("tab-flat");
-const testBtn = document.getElementById("test-notify");
-
-notifySelect.value = localStorage.getItem("notifyMinutes") || "1";
-notifySelect.addEventListener("change", () => {
-  localStorage.setItem("notifyMinutes", notifySelect.value);
-});
-
-testBtn.addEventListener("click", () => {
-  Notification.requestPermission().then(p => {
-    if (p !== "granted") return;
-    new Notification("✅ 通知テスト成功", {
-      body: "この通知は即座に表示されました。",
-    });
-    setTimeout(() => {
-      new Notification("🔔 テスト通知", {
-        body: "これは5秒後に届く通知のテストです。",
-      });
-    }, 5000);
-  });
-});
-
+const settingsButton = document.getElementById("settings-button");
 let raceData = [];
 
+// 初期化処理
 fetch(API_URL)
   .then(res => {
     if (!res.ok) throw new Error("データが見つかりません");
     return res.json();
   })
   .then(data => {
-    console.log("✅ JSON取得成功", data);
     raceData = data;
     renderRaces("all");
   })
@@ -56,17 +33,16 @@ fetch(API_URL)
     raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
   });
 
-// ========== 通知予約関数 ==========
-function scheduleNotification(title, deadline, raceId) {
+// ========== 通知スケジューリング ==========
+function scheduleNotification(title, closedAt, raceId) {
   Notification.requestPermission().then(permission => {
     if (permission !== "granted") return;
-    const [h, m] = deadline.split(":").map(Number);
+
+    const [h, m] = closedAt.split(":").map(Number);
     const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
     const now = new Date();
     const target = new Date();
-    target.setHours(h);
-    target.setMinutes(m - notifyMinutes);
-    target.setSeconds(0);
+    target.setHours(h, m - notifyMinutes, 0, 0);
 
     const diff = target.getTime() - now.getTime();
     if (diff <= 0) return;
@@ -119,9 +95,11 @@ function renderRaces(mode = "all") {
     });
 
     venueBlock.races.forEach(race => {
-      const deadline = new Date(`${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6)}T${race.closed_at}`);
       const now = new Date();
-      const isPast = now > deadline;
+      const [h, m] = race.closed_at.split(":").map(Number);
+      const deadline = new Date(now);
+      deadline.setHours(h, m, 0, 0);
+      const isPast = now > new Date(deadline.getTime() + 5 * 60 * 1000);  // 締切＋5分
 
       const raceId = `${venueBlock.venue}_${race.race_number}`;
       const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
@@ -143,7 +121,7 @@ function renderRaces(mode = "all") {
       const toggle = card.querySelector(`#toggle-${raceId}`);
       if (toggle) {
         toggle.checked = isOn;
-        toggle.disabled = isPast; // 締切後はチェック不可（任意）
+        toggle.disabled = isPast;
         toggle.addEventListener("change", () => {
           if (toggle.checked) {
             localStorage.setItem(`toggle-${raceId}`, "on");
@@ -222,20 +200,20 @@ function sendPushRequest() {
       notifyMinutes: notifyMinutes
     })
   })
-  .then(res => res.json())
-  .then(data => {
-    alert("✅ 通知依頼を送信しました！");
-    console.log("送信内容:", data);
-  })
-  .catch(err => {
-    alert("❌ 通知依頼に失敗しました");
-    console.error(err);
-  });
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ 通知依頼を送信しました！");
+      console.log("送信内容:", data);
+    })
+    .catch(err => {
+      alert("❌ 通知依頼に失敗しました");
+      console.error(err);
+    });
 }
 
 function activateRaceByText() {
   const input = document.getElementById("race-input").value.trim();
-  const lines = input.split(/\r?\n/);
+  const lines = input.split(/\r?\n|,/); // 改行・カンマ両対応
 
   if (input === "") {
     alert("⚠️ 入力が空です");
@@ -289,11 +267,81 @@ function findRaceInfo(raceId) {
   return null;
 }
 
-// ========== タブ切り替え ==========
+// ========== 設定画面 ==========
+function renderSettings() {
+  raceList.innerHTML = "";
+
+  const container = document.createElement("div");
+  container.className = "venue-container";
+  container.style.padding = "1rem";
+
+  container.innerHTML = `
+    <div style="margin-bottom: 1rem;">
+      <label style="margin-right: 1rem;">通知タイミング:</label>
+      <select id="notify-minutes-setting">
+        <option value="1">1分前</option>
+        <option value="2">2分前</option>
+        <option value="3">3分前</option>
+        <option value="4">4分前</option>
+        <option value="5">5分前</option>
+      </select>
+    </div>
+
+    <button onclick="triggerTestNotify()" class="notify-button" style="margin-bottom: 1rem;">🔔 テスト通知</button><br>
+
+    <button onclick="refetchData()" class="notify-button" style="margin-right: 1rem;">📥 データ再取得</button>
+    <button onclick="resetData()" class="notify-button">🗑️ リセット</button>
+  `;
+
+  raceList.appendChild(container);
+
+  const select = document.getElementById("notify-minutes-setting");
+  select.value = localStorage.getItem("notifyMinutes") || "1";
+  select.addEventListener("change", () => {
+    localStorage.setItem("notifyMinutes", select.value);
+  });
+}
+
+function triggerTestNotify() {
+  Notification.requestPermission().then(p => {
+    if (p !== "granted") return;
+    new Notification("✅ 通知テスト成功", {
+      body: "この通知は即座に表示されました。",
+    });
+    setTimeout(() => {
+      new Notification("🔔 テスト通知", {
+        body: "これは5秒後に届く通知のテストです。",
+      });
+    }, 5000);
+  });
+}
+
+function refetchData() {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      raceData = data;
+      alert("✅ 最新のデータを再取得しました");
+      renderRaces("all");
+    })
+    .catch(err => {
+      alert("❌ データ再取得に失敗しました");
+      console.error(err);
+    });
+}
+
+function resetData() {
+  if (confirm("本当にすべての通知設定をリセットしますか？")) {
+    localStorage.clear();
+    alert("✅ 設定をリセットしました");
+    renderRaces("all");
+  }
+}
+
+// ========== タブ制御・イベント登録 ==========
 tabAll.addEventListener("click", () => {
   tabAll.classList.add("active");
   tabOn.classList.remove("active");
-  tabGirls.classList.remove("active");
   tabFlat.classList.remove("active");
   renderRaces("all");
 });
@@ -301,25 +349,22 @@ tabAll.addEventListener("click", () => {
 tabOn.addEventListener("click", () => {
   tabOn.classList.add("active");
   tabAll.classList.remove("active");
-  tabGirls.classList.remove("active");
   tabFlat.classList.remove("active");
   renderRaces("on");
-});
-
-tabGirls.addEventListener("click", () => {
-  tabGirls.classList.add("active");
-  tabAll.classList.remove("active");
-  tabOn.classList.remove("active");
-  tabFlat.classList.remove("active");
-  renderRaces("girls");
 });
 
 tabFlat.addEventListener("click", () => {
   tabFlat.classList.add("active");
   tabAll.classList.remove("active");
   tabOn.classList.remove("active");
-  tabGirls.classList.remove("active");
   renderRaces("flat");
+});
+
+settingsButton.addEventListener("click", () => {
+  tabAll.classList.remove("active");
+  tabOn.classList.remove("active");
+  tabFlat.classList.remove("active");
+  renderSettings();
 });
 
 // ========== Service Worker 登録 ==========
