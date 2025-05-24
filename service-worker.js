@@ -1,3 +1,6 @@
+// ✅ バージョン付きキャッシュ名
+const CACHE_NAME = 'keirin-cache-v2';
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open('keirin-cache').then(cache => {
