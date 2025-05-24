@@ -246,27 +246,50 @@ function sendPushRequest() {
 
 function activateRaceByText() {
   const input = document.getElementById("race-input").value.trim();
-  const match = input.match(/^(.+?)(\d{1,2})R$/);
-  if (!match) {
-    alert("⚠️ 入力形式が正しくありません（例: 立川1R）");
-    return;
-  }
-  const venue = match[1];
-  const number = match[2];
-  const raceId = `${venue}_${number}`;
-  const toggle = document.getElementById(`toggle-${raceId}`);
-  if (toggle) {
-    toggle.checked = true;
-    localStorage.setItem(`toggle-${raceId}`, "on");
-    const race = findRaceInfo(raceId);
-    if (race) {
-      scheduleNotification(`${venue} 第${number}R`, race.closed_at, raceId);
-    }
-    alert(`✅ ${input} を通知ONにしました`);
-  } else {
-    alert("❌ 該当レースが見つかりません（画面に表示されていない可能性も）");
-  }
+  const lines = input.split(/\r?\n/); // 改行で分割
+
+if (input === "") {
+  alert("⚠️ 入力が空です");
+  return;
 }
+
+
+  let successCount = 0;
+  let failList = [];
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const match = trimmed.match(/^(.+?)(\d{1,2})R$/);
+    if (!match) {
+      failList.push(trimmed);
+      return;
+    }
+
+    const venue = match[1];
+    const number = match[2];
+    const raceId = `${venue}_${number}`;
+    const toggle = document.getElementById(`toggle-${raceId}`);
+    if (toggle) {
+      toggle.checked = true;
+      localStorage.setItem(`toggle-${raceId}`, "on");
+      const race = findRaceInfo(raceId);
+      if (race) {
+        scheduleNotification(`${venue} 第${number}R`, race.closed_at, raceId);
+      }
+      successCount++;
+    } else {
+      failList.push(trimmed);
+    }
+  });
+
+  let message = `✅ ${successCount}件 通知ONにしました。`;
+  if (failList.length > 0) {
+    message += `\n❌ 該当レースが見つかりません: ${failList.join(", ")}`;
+  }
+  alert(message);
+}
+
 
 function findRaceInfo(raceId) {
   for (const venueBlock of raceData) {
