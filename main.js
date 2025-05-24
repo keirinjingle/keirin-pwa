@@ -36,6 +36,7 @@ fetch(API_URL)
     return res.json();
   })
   .then(data => {
+    console.log("✅ JSON取得成功", data);
     raceData = data;
     renderRaces("all");
   })
@@ -212,3 +213,10 @@ tabGirls.addEventListener("click", () => {
   tabGirls.classList.add("active");
   tabAll.classList.remove("active");
   tabOn.classList.remove("active");
+  renderRaces("girls");
+});
+
+// ========== Service Worker 登録 ==========
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js');
+}
