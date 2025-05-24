@@ -44,6 +44,18 @@
       cursor: pointer;
       font-size: 0.9rem;
     }
+    .force-reload {
+      margin-top: 1rem;
+    }
+    .force-reload button {
+      padding: 6px 12px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
     .tabs {
       display: flex;
       gap: 1rem;
@@ -150,12 +162,34 @@
     <button class="tab-button" id="tab-on">🔔通知中のレース</button>
   </div>
 
-  <!-- ✅ 常に表示される更新ボタン -->
   <div class="refresh">
     <button id="refresh-data">🔄 レース情報を再読み込み</button>
   </div>
 
+  <div class="force-reload">
+    <button onclick="forceReload()">⚠️ 強制リロード（キャッシュクリア）</button>
+  </div>
+
   <div id="race-list">読み込み中...</div>
+
+  <script>
+    function forceReload() {
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
+        }).finally(() => {
+          location.reload(true);
+        });
+      } else {
+        location.reload(true);
+      }
+    }
+  </script>
 
   <script src="main.js?v=1"></script>
 </body>
