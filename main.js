@@ -1,4 +1,4 @@
-// ========== 通知設定 ==========
+// ========== 設定 ==========
 const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
@@ -29,18 +29,22 @@ testBtn.addEventListener("click", () => {
 
 let raceData = [];
 
-fetch(API_URL)
-  .then(res => {
-    if (!res.ok) throw new Error("データが見つかりません");
-    return res.json();
-  })
-  .then(data => {
-    raceData = data;
-    renderRaces("all");
-  })
-  .catch(err => {
-    raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
-  });
+function fetchRaceData() {
+  raceList.innerHTML = "読み込み中...";
+
+  fetch(API_URL)
+    .then(res => {
+      if (!res.ok) throw new Error("データが見つかりません");
+      return res.json();
+    })
+    .then(data => {
+      raceData = data;
+      renderRaces("all");
+    })
+    .catch(err => {
+      raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
+    });
+}
 
 function renderRaces(mode = "all") {
   raceList.innerHTML = "";
@@ -166,4 +170,13 @@ tabOn.addEventListener("click", () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js');
+}
+
+// 初回読み込み
+fetchRaceData();
+
+// 🔄 再読み込みボタン対応
+const refreshBtn = document.getElementById("refresh-data");
+if (refreshBtn) {
+  refreshBtn.addEventListener("click", fetchRaceData);
 }
