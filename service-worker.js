@@ -1,4 +1,4 @@
-const CACHE_NAME = "keirin-cache-v1.53";
+const CACHE_NAME = "keirin-cache-v1.55";
 
 self.addEventListener('install', e => {
   e.waitUntil(
