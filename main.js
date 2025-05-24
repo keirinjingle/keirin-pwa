@@ -1,4 +1,4 @@
-// ========== 設定 ==========
+// ========== 通知設定 ==========
 const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
@@ -6,6 +6,7 @@ const raceList = document.getElementById("race-list");
 const notifySelect = document.getElementById("notify-minutes");
 const tabAll = document.getElementById("tab-all");
 const tabOn = document.getElementById("tab-on");
+const tabGirls = document.getElementById("tab-girls"); // 👈 ガールズ用タブを取得
 const testBtn = document.getElementById("test-notify");
 
 notifySelect.value = localStorage.getItem("notifyMinutes") || "1";
@@ -84,6 +85,7 @@ function renderRaces(mode = "all") {
       const raceId = `${venueBlock.venue}_${race.race_number}`;
       const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
       if (mode === "on" && !isOn) return;
+      if (mode === "girls" && race.class_category !== "L級") return; // 👈 L級以外を除外
 
       const card = document.createElement("div");
       card.className = "race-card";
@@ -120,63 +122,23 @@ function renderRaces(mode = "all") {
   });
 }
 
-function toggleAll(containerId, turnOn) {
-  const container = document.getElementById(containerId);
-  const checkboxes = container.querySelectorAll("input[type='checkbox']");
-  checkboxes.forEach(cb => {
-    const raceId = cb.id.replace("toggle-", "");
-    cb.checked = turnOn;
-    if (turnOn) {
-      localStorage.setItem(`toggle-${raceId}`, "on");
-    } else {
-      localStorage.removeItem(`toggle-${raceId}`);
-    }
-  });
-}
-
-function scheduleNotification(title, deadline, raceId) {
-  Notification.requestPermission().then(permission => {
-    if (permission !== "granted") return;
-    const [h, m] = deadline.split(":").map(Number);
-    const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
-    const now = new Date();
-    const target = new Date();
-    target.setHours(h);
-    target.setMinutes(m - notifyMinutes);
-    target.setSeconds(0);
-
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return;
-
-    setTimeout(() => {
-      new Notification("🚨 締切通知", {
-        body: `${title} の締切 ${notifyMinutes}分前です！`,
-      });
-    }, diff);
-  });
-}
-
 tabAll.addEventListener("click", () => {
   tabAll.classList.add("active");
   tabOn.classList.remove("active");
+  tabGirls.classList.remove("active");
   renderRaces("all");
 });
 
 tabOn.addEventListener("click", () => {
   tabOn.classList.add("active");
   tabAll.classList.remove("active");
+  tabGirls.classList.remove("active");
   renderRaces("on");
 });
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js');
-}
-
-// 初回読み込み
-fetchRaceData();
-
-// 🔄 再読み込みボタン対応
-const refreshBtn = document.getElementById("refresh-data");
-if (refreshBtn) {
-  refreshBtn.addEventListener("click", fetchRaceData);
-}
+tabGirls.addEventListener("click", () => {
+  tabGirls.classList.add("active");
+  tabAll.classList.remove("active");
+  tabOn.classList.remove("active");
+  renderRaces("girls");
+});
