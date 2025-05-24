@@ -273,11 +273,11 @@ function renderSettings() {
 
   const container = document.createElement("div");
   container.className = "venue-container";
-  container.style.padding = "1rem";
+  container.style.padding = "1.2rem";
 
   container.innerHTML = `
     <div style="margin-bottom: 1rem;">
-      <label style="margin-right: 1rem;">通知タイミング:</label>
+      <label for="notify-minutes-setting" style="font-size: 1.2rem; margin-right: 1rem;">通知タイミング:</label>
       <select id="notify-minutes-setting">
         <option value="1">1分前</option>
         <option value="2">2分前</option>
@@ -287,10 +287,11 @@ function renderSettings() {
       </select>
     </div>
 
-    <button onclick="triggerTestNotify()" class="notify-button" style="margin-bottom: 1rem;">🔔 テスト通知</button><br>
-
-    <button onclick="refetchData()" class="notify-button" style="margin-right: 1rem;">📥 データ再取得</button>
-    <button onclick="resetData()" class="notify-button">🗑️ リセット</button>
+    <div class="setting-buttons">
+      <button onclick="triggerTestNotify()">🔔 テスト通知</button>
+      <button onclick="refetchData()">📥 データ再取得</button>
+      <button onclick="resetData()">🗑️ リセット</button>
+    </div>
   `;
 
   raceList.appendChild(container);
@@ -301,6 +302,7 @@ function renderSettings() {
     localStorage.setItem("notifyMinutes", select.value);
   });
 }
+
 
 function triggerTestNotify() {
   Notification.requestPermission().then(p => {
