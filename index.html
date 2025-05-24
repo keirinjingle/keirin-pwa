@@ -6,138 +6,219 @@
   <title>Keirin Timer</title>
   <link rel="manifest" href="manifest.json" />
   <style>
-    body { font-family: sans-serif; padding: 1rem; background-color: #f9f9f9; }
-    .venue-header { cursor: pointer; font-weight: bold; font-size: 1.2rem; margin-top: 1.5rem; background: #eee; padding: 0.5rem; border-radius: 5px; }
-    .race-list { display: none; margin-top: 0.5rem; }
-    .race-card { background: #fff; padding: 0.7rem; margin: 0.5rem 0; border-radius: 5px; box-shadow: 0 0 3px rgba(0,0,0,0.1); }
-    .settings { margin-bottom: 1rem; }
-    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-    .toggle-switch input { display: none; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 20px; transition: .4s; }
-    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: #4caf50; }
-    input:checked + .slider:before { transform: translateX(20px); }
-    .venue-actions { margin-top: 0.3rem; font-size: 0.9rem; }
-    button.action-btn { margin-right: 0.5rem; padding: 0.3rem 0.6rem; border: none; border-radius: 4px; background-color: #4caf50; color: white; cursor: pointer; }
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .tab-button {
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #ddd;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background-color: #4caf50;
+      color: white;
+    }
+    .venue-header {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background-color: #f2f2f2;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .race-container {
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+      border-left: 2px solid #ccc;
+    }
+    .race-card {
+      border-bottom: 1px solid #ccc;
+      padding: 0.5rem 0;
+    }
+    .toggle {
+      appearance: none;
+      width: 40px;
+      height: 24px;
+      background: #ccc;
+      border-radius: 12px;
+      position: relative;
+      outline: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle:checked {
+      background: #4caf50;
+    }
+    .toggle::before {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 2px;
+      left: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle:checked::before {
+      transform: translateX(16px);
+    }
+    .setting {
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>🚴 Keirin Timer</h1>
-  <div class="settings">
-    通知タイミング: <select id="notify-minutes">
+
+  <div class="setting">
+    通知タイミング: 
+    <select id="notify-minutes">
       <option value="1">1分前</option>
       <option value="2">2分前</option>
-      <option value="3" selected>3分前</option>
+      <option value="3">3分前</option>
       <option value="4">4分前</option>
       <option value="5">5分前</option>
     </select>
   </div>
-  <div id="venue-list">読み込み中...</div>
 
-  <script>
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
-    const notifyMinutes = () => parseInt(localStorage.getItem("notifyMinutes") || "3");
-    document.getElementById("notify-minutes").value = notifyMinutes();
-    document.getElementById("notify-minutes").addEventListener("change", e => {
-      localStorage.setItem("notifyMinutes", e.target.value);
+  <div class="tabs">
+    <button class="tab-button active" id="tab-all">すべてのレース</button>
+    <button class="tab-button" id="tab-on">🔔通知中のレース</button>
+  </div>
+
+  <div id="race-list">読み込み中...</div>
+<script>
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
+  const raceList = document.getElementById("race-list");
+  const notifySelect = document.getElementById("notify-minutes");
+  const tabAll = document.getElementById("tab-all");
+  const tabOn = document.getElementById("tab-on");
+
+  notifySelect.value = localStorage.getItem("notifyMinutes") || "1";
+  notifySelect.addEventListener("change", () => {
+    localStorage.setItem("notifyMinutes", notifySelect.value);
+  });
+
+  let raceData = [];
+
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      raceData = data;
+      renderRaces("all");
     });
 
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("venue-list");
-        container.innerHTML = "";
+  function renderRaces(mode = "all") {
+    raceList.innerHTML = "";
 
-        data.forEach(venueBlock => {
-          const venueName = `${venueBlock.venue}（${venueBlock.grade}）`;
+    raceData.forEach((venueBlock, index) => {
+      const venueContainer = document.createElement("div");
+      venueContainer.className = "venue-container";
 
-          const venueHeader = document.createElement("div");
-          venueHeader.className = "venue-header";
-          venueHeader.innerHTML = `<div>${venueName}</div><div class="venue-actions"><button class="action-btn" data-venue="${venueName}" data-action="on">一括登録</button><button class="action-btn" data-venue="${venueName}" data-action="off">一括解除</button></div>`;
+      const venueHeader = document.createElement("div");
+      venueHeader.className = "venue-header";
+      venueHeader.textContent = `${venueBlock.venue}（${venueBlock.grade}）`;
+      venueContainer.appendChild(venueHeader);
 
-          const raceList = document.createElement("div");
-          raceList.className = "race-list";
+      const raceContainer = document.createElement("div");
+      raceContainer.className = "race-container";
+      venueContainer.appendChild(raceContainer);
 
-          venueHeader.addEventListener("click", () => {
-            raceList.style.display = raceList.style.display === "none" ? "block" : "none";
-          });
-
-          venueBlock.races.forEach((race, index) => {
-            const deadline = new Date(`${today.slice(0,4)}-${today.slice(4,6)}-${today.slice(6)}T${race.closed_at}`);
-            const start = race.start_time || "--:--";
-            const now = new Date();
-            const isPast = now > deadline;
-
-            const div = document.createElement("div");
-            div.className = "race-card";
-            div.innerHTML = `
-              <div><strong>${race.race_number}R - ${race.class_category}</strong></div>
-              <div>締切: ${race.closed_at} ／ 発走: ${start}</div>
-              <div><a href="${race.url}" target="_blank">出走表を見る</a></div>
-            `;
-
-            const toggleWrapper = document.createElement("label");
-            toggleWrapper.className = "toggle-switch";
-            const input = document.createElement("input");
-            input.type = "checkbox";
-            input.disabled = isPast;
-            const slider = document.createElement("span");
-            slider.className = "slider";
-
-            input.addEventListener("change", () => {
-              if (input.checked) {
-                scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at);
-              }
-            });
-
-            toggleWrapper.appendChild(input);
-            toggleWrapper.appendChild(slider);
-            div.appendChild(toggleWrapper);
-            raceList.appendChild(div);
-          });
-
-          container.appendChild(venueHeader);
-          container.appendChild(raceList);
-        });
-
-        // 一括操作
-        document.querySelectorAll("button.action-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const action = btn.dataset.action;
-            const venueDiv = btn.closest(".venue-header");
-            const races = venueDiv.nextElementSibling.querySelectorAll("input[type=checkbox]");
-            races.forEach(input => {
-              if (!input.disabled) input.checked = action === "on";
-            });
-          });
-        });
-      });
-
-    function scheduleNotification(title, deadline) {
-      Notification.requestPermission().then(permission => {
-        if (permission !== "granted") return;
+      venueBlock.races.forEach(race => {
+        const deadline = new Date(`${today.slice(0,4)}-${today.slice(4,6)}-${today.slice(6)}T${race.closed_at}`);
         const now = new Date();
-        const [h, m] = deadline.split(":".map(Number));
-        const target = new Date();
-        target.setHours(h);
-        target.setMinutes(m - notifyMinutes());
-        target.setSeconds(0);
+        if (now > deadline) return; // 締切後は表示しない
 
-        const diff = target.getTime() - now.getTime();
-        if (diff <= 0) return alert("すでに通知時刻を過ぎています");
+        const raceId = `${venueBlock.venue}_${race.race_number}`;
+        const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
 
-        setTimeout(() => {
-          new Notification("🚨 締切通知", { body: `${title} の締切が近づいています` });
-        }, diff);
+        if (mode === "on" && !isOn) return;
+
+        const card = document.createElement("div");
+        card.className = "race-card";
+        card.innerHTML = `
+          <strong>${race.race_number}R - ${race.class_category}</strong><br />
+          締切: ${race.closed_at} ／ 発走: ${race.start_time}<br />
+          選手: ${race.players.join("、")}<br />
+          <label>
+            <input type="checkbox" class="toggle" id="toggle-${raceId}">
+          </label>
+        `;
+        raceContainer.appendChild(card);
+
+        const toggle = card.querySelector(`#toggle-${raceId}`);
+        toggle.checked = isOn;
+
+        toggle.addEventListener("change", () => {
+          if (toggle.checked) {
+            localStorage.setItem(`toggle-${raceId}`, "on");
+            scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
+          } else {
+            localStorage.removeItem(`toggle-${raceId}`);
+          }
+        });
+
+        if (toggle.checked) {
+          scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
+        }
       });
-    }
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js');
-      });
-    }
-  </script>
+      if (raceContainer.innerHTML.trim() !== "") {
+        raceList.appendChild(venueContainer);
+      }
+    });
+  }
+
+  function scheduleNotification(title, deadline, raceId) {
+    Notification.requestPermission().then(permission => {
+      if (permission !== "granted") return;
+
+      const [h, m] = deadline.split(":").map(Number);
+      const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
+      const now = new Date();
+      const target = new Date();
+      target.setHours(h);
+      target.setMinutes(m - notifyMinutes);
+      target.setSeconds(0);
+
+      const diff = target.getTime() - now.getTime();
+      if (diff <= 0) return;
+
+      setTimeout(() => {
+        new Notification("🚨 締切通知", {
+          body: `${title} の締切 ${notifyMinutes}分前です！`,
+        });
+      }, diff);
+    });
+  }
+
+  tabAll.addEventListener("click", () => {
+    tabAll.classList.add("active");
+    tabOn.classList.remove("active");
+    renderRaces("all");
+  });
+
+  tabOn.addEventListener("click", () => {
+    tabOn.classList.add("active");
+    tabAll.classList.remove("active");
+    renderRaces("on");
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js');
+  }
+</script>
 </body>
 </html>
