@@ -5,10 +5,139 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Keirin Timer</title>
   <link rel="manifest" href="manifest.json" />
-  <script src="main.js" defer></script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background-color: #f9f9f9; }
+    .venue-header { cursor: pointer; font-weight: bold; font-size: 1.2rem; margin-top: 1.5rem; background: #eee; padding: 0.5rem; border-radius: 5px; }
+    .race-list { display: none; margin-top: 0.5rem; }
+    .race-card { background: #fff; padding: 0.7rem; margin: 0.5rem 0; border-radius: 5px; box-shadow: 0 0 3px rgba(0,0,0,0.1); }
+    .settings { margin-bottom: 1rem; }
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .toggle-switch input { display: none; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 20px; transition: .4s; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #4caf50; }
+    input:checked + .slider:before { transform: translateX(20px); }
+    .venue-actions { margin-top: 0.3rem; font-size: 0.9rem; }
+    button.action-btn { margin-right: 0.5rem; padding: 0.3rem 0.6rem; border: none; border-radius: 4px; background-color: #4caf50; color: white; cursor: pointer; }
+  </style>
 </head>
 <body>
   <h1>🚴 Keirin Timer</h1>
-  <div id="race-list">読み込み中...</div>
+  <div class="settings">
+    通知タイミング: <select id="notify-minutes">
+      <option value="1">1分前</option>
+      <option value="2">2分前</option>
+      <option value="3" selected>3分前</option>
+      <option value="4">4分前</option>
+      <option value="5">5分前</option>
+    </select>
+  </div>
+  <div id="venue-list">読み込み中...</div>
+
+  <script>
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
+    const notifyMinutes = () => parseInt(localStorage.getItem("notifyMinutes") || "3");
+    document.getElementById("notify-minutes").value = notifyMinutes();
+    document.getElementById("notify-minutes").addEventListener("change", e => {
+      localStorage.setItem("notifyMinutes", e.target.value);
+    });
+
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("venue-list");
+        container.innerHTML = "";
+
+        data.forEach(venueBlock => {
+          const venueName = `${venueBlock.venue}（${venueBlock.grade}）`;
+
+          const venueHeader = document.createElement("div");
+          venueHeader.className = "venue-header";
+          venueHeader.innerHTML = `<div>${venueName}</div><div class="venue-actions"><button class="action-btn" data-venue="${venueName}" data-action="on">一括登録</button><button class="action-btn" data-venue="${venueName}" data-action="off">一括解除</button></div>`;
+
+          const raceList = document.createElement("div");
+          raceList.className = "race-list";
+
+          venueHeader.addEventListener("click", () => {
+            raceList.style.display = raceList.style.display === "none" ? "block" : "none";
+          });
+
+          venueBlock.races.forEach((race, index) => {
+            const deadline = new Date(`${today.slice(0,4)}-${today.slice(4,6)}-${today.slice(6)}T${race.closed_at}`);
+            const start = race.start_time || "--:--";
+            const now = new Date();
+            const isPast = now > deadline;
+
+            const div = document.createElement("div");
+            div.className = "race-card";
+            div.innerHTML = `
+              <div><strong>${race.race_number}R - ${race.class_category}</strong></div>
+              <div>締切: ${race.closed_at} ／ 発走: ${start}</div>
+              <div><a href="${race.url}" target="_blank">出走表を見る</a></div>
+            `;
+
+            const toggleWrapper = document.createElement("label");
+            toggleWrapper.className = "toggle-switch";
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.disabled = isPast;
+            const slider = document.createElement("span");
+            slider.className = "slider";
+
+            input.addEventListener("change", () => {
+              if (input.checked) {
+                scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at);
+              }
+            });
+
+            toggleWrapper.appendChild(input);
+            toggleWrapper.appendChild(slider);
+            div.appendChild(toggleWrapper);
+            raceList.appendChild(div);
+          });
+
+          container.appendChild(venueHeader);
+          container.appendChild(raceList);
+        });
+
+        // 一括操作
+        document.querySelectorAll("button.action-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const action = btn.dataset.action;
+            const venueDiv = btn.closest(".venue-header");
+            const races = venueDiv.nextElementSibling.querySelectorAll("input[type=checkbox]");
+            races.forEach(input => {
+              if (!input.disabled) input.checked = action === "on";
+            });
+          });
+        });
+      });
+
+    function scheduleNotification(title, deadline) {
+      Notification.requestPermission().then(permission => {
+        if (permission !== "granted") return;
+        const now = new Date();
+        const [h, m] = deadline.split(":".map(Number));
+        const target = new Date();
+        target.setHours(h);
+        target.setMinutes(m - notifyMinutes());
+        target.setSeconds(0);
+
+        const diff = target.getTime() - now.getTime();
+        if (diff <= 0) return alert("すでに通知時刻を過ぎています");
+
+        setTimeout(() => {
+          new Notification("🚨 締切通知", { body: `${title} の締切が近づいています` });
+        }, diff);
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
 </body>
 </html>
