@@ -29,33 +29,9 @@
     .setting {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 0.5rem;
       margin-bottom: 1rem;
-    }
-    .refresh {
-      margin-bottom: 1rem;
-    }
-    .refresh button {
-      padding: 6px 12px;
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .force-reload {
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .force-reload button {
-      padding: 6px 12px;
-      background-color: #f44336;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
     }
     .tabs {
       display: flex;
@@ -138,6 +114,19 @@
     .toggle:checked::before {
       transform: translateX(16px);
     }
+
+    .force-reload-inline {
+      background-color: #f44336;
+      color: white;
+      font-size: 0.8rem;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .force-reload-inline:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -146,6 +135,7 @@
     <h1>Keirin Timer</h1>
   </header>
 
+  <!-- ✅ 設定欄に統合したボタン -->
   <div class="setting">
     通知タイミング: 
     <select id="notify-minutes">
@@ -156,6 +146,7 @@
       <option value="5">5分前</option>
     </select>
     <button id="test-notify">🔔 5秒後に通知</button>
+    <button class="force-reload-inline" onclick="forceReload()">⚠️ 強制リロード</button>
   </div>
 
   <div class="tabs">
@@ -163,18 +154,9 @@
     <button class="tab-button" id="tab-on">🔔通知中のレース</button>
   </div>
 
-  <div class="refresh">
-    <button id="refresh-data">🔄 レース情報を再読み込み</button>
-  </div>
-
-  <!-- ✅ 「読み込み中...」の前に強制リロードボタンを配置 -->
-  <div class="force-reload">
-    <button onclick="forceReload()">⚠️ 強制リロード（キャッシュクリア）</button>
-  </div>
-
   <div id="race-list">読み込み中...</div>
 
-  <!-- ✅ 強制リロード用スクリプト -->
+  <!-- 🔧 強制リロード関数 -->
   <script>
     function forceReload() {
       if ('caches' in window) {
@@ -194,7 +176,6 @@
     }
   </script>
 
-  <!-- ✅ main.js 読み込み -->
   <script src="main.js?v=1"></script>
 </body>
 </html>
