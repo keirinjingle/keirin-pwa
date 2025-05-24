@@ -16,8 +16,9 @@
     }
     header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
+      flex-wrap: wrap;
       margin-bottom: 1rem;
     }
     header img {
@@ -27,6 +28,21 @@
       font-size: 1.8rem;
       margin: 0;
     }
+    .notify-button {
+      font-size: 1.8rem;
+      padding: 0.2em 0.6em;
+      min-width: 4.5em;
+      background-color: #ff9800;
+      color: white;
+      border: none;
+      border-radius: 0.6rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .notify-button:hover {
+      background-color: #e68900;
+    }
+
     .setting {
       display: flex;
       align-items: center;
@@ -88,6 +104,10 @@
       border-bottom: 1px solid #eee;
       padding: 0.75rem 0;
     }
+    .race-card.past {
+      opacity: 0.5;
+      background-color: #eee;
+    }
     .toggle {
       appearance: none;
       width: 40px;
@@ -127,35 +147,15 @@
       padding: 6px 10px;
       margin-left: 4px;
     }
-
-    .push-button-container {
-      text-align: center;
-      margin: 1.5rem 0 1rem;
-    }
-
-    .push-button-container button {
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      background-color: #ff9800;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .push-button-container button:hover {
-      background-color: #e68900;
-    }
-    .race-card.past {
-  opacity: 0.5;
-  background-color: #eee;
-}
   </style>
 </head>
 <body>
   <header>
-    <img src="icon.png" alt="icon" />
-    <h1>Keirin Timer</h1>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <img src="icon.png" alt="icon" />
+      <h1>Keirin Timer</h1>
+    </div>
+    <button onclick="sendPushRequest()" class="notify-button">🚀通知！</button>
   </header>
 
   <div class="setting">
@@ -168,11 +168,6 @@
       <option value="5">5分前</option>
     </select>
     <button id="test-notify">🔔 5秒後に通知</button>
-  </div>
-
-  <!-- 🚀 通知依頼ボタン -->
-  <div class="push-button-container">
-    <button onclick="sendPushRequest()">🚀 通知依頼！</button>
   </div>
 
   <div class="tabs">
@@ -188,7 +183,7 @@
   </div>
 
   <div id="race-list">読み込み中...</div>
+
   <script src="main.js?v=1.51"></script>
-  <script src="main.js"></script>
 </body>
 </html>
