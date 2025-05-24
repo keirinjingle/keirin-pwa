@@ -37,12 +37,12 @@
     }
     .refresh button {
       padding: 6px 12px;
-      font-size: 0.9rem;
       background-color: #4caf50;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 0.9rem;
     }
     .tabs {
       display: flex;
@@ -145,25 +145,15 @@
     <button id="test-notify">🔔 5秒後に通知</button>
   </div>
 
-  <div class="refresh">
-    <button id="refresh-data">🔄 レース情報を再読み込み</button>
-  </div>
-
   <div class="tabs">
     <button class="tab-button active" id="tab-all">すべてのレース</button>
     <button class="tab-button" id="tab-on">🔔通知中のレース</button>
   </div>
-<div id="refresh-wrapper" style="margin-bottom: 1rem;">
-  <button id="refresh-data" style="
-    padding: 6px 12px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-  ">🔄 レース情報を再読み込み</button>
-</div>
+
+  <!-- ✅ 常に表示される更新ボタン -->
+  <div class="refresh">
+    <button id="refresh-data">🔄 レース情報を再読み込み</button>
+  </div>
 
   <div id="race-list">読み込み中...</div>
 
