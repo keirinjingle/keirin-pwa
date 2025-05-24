@@ -1,148 +1,3 @@
-// ========== 通知設定 & API取得 ==========
-function getEffectiveDateString() {
-  const now = new Date();
-  if (now.getHours() < 5) {
-    now.setDate(now.getDate() - 1);
-  }
-  return now.toISOString().slice(0, 10).replace(/-/g, "");
-}
-const today = getEffectiveDateString();
-const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
-
-const raceList = document.getElementById("race-list");
-const notifySelect = document.getElementById("notify-minutes");
-const tabAll = document.getElementById("tab-all");
-const tabOn = document.getElementById("tab-on");
-const tabGirls = document.getElementById("tab-girls");
-const tabFlat = document.getElementById("tab-flat");
-const settingsButton = document.getElementById("settings-button");
-let raceData = [];
-
-// 初期化処理
-fetch(API_URL)
-  .then(res => {
-    if (!res.ok) throw new Error("データが見つかりません");
-    return res.json();
-  })
-  .then(data => {
-    raceData = data;
-    renderRaces("all");
-  })
-  .catch(err => {
-    console.error("Fetch failed:", err);
-    raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
-  });
-
-// ========== 通知スケジューリング ==========
-function scheduleNotification(title, closedAt, raceId) {
-  Notification.requestPermission().then(permission => {
-    if (permission !== "granted") return;
-
-    const [h, m] = closedAt.split(":").map(Number);
-    const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
-    const now = new Date();
-    const target = new Date();
-    target.setHours(h, m - notifyMinutes, 0, 0);
-
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return;
-
-    setTimeout(() => {
-      new Notification("🚨 締切通知", {
-        body: `${title} の締切 ${notifyMinutes}分前です！`,
-      });
-    }, diff);
-  });
-}
-function renderRaces(mode = "all") {
-  raceList.innerHTML = "";
-
-  if (mode === "girls") {
-    const girlControl = document.createElement("div");
-    girlControl.style.marginBottom = "1rem";
-    girlControl.innerHTML = `
-      <button onclick="toggleGirls(true)" style="padding:4px 8px; margin-right:6px;">👩 ガールズすべてON</button>
-      <button onclick="toggleGirls(false)" style="padding:4px 8px;">🚫 ガールズすべてOFF</button>
-    `;
-    raceList.appendChild(girlControl);
-  }
-
-  raceData.forEach((venueBlock, index) => {
-    const venueContainer = document.createElement("div");
-    venueContainer.className = "venue-container";
-    const venueId = `venue-${index}`;
-
-    const venueHeader = document.createElement("div");
-    venueHeader.className = "venue-header";
-    venueHeader.innerHTML = `
-      <span>${venueBlock.venue}（${venueBlock.grade ?? "グレード不明"}）</span>
-      <div class="venue-controls">
-        <button onclick="toggleAll('${venueId}', true)">すべてON</button>
-        <button onclick="toggleAll('${venueId}', false)">すべてOFF</button>
-      </div>
-    `;
-    venueContainer.appendChild(venueHeader);
-
-    const raceContainer = document.createElement("div");
-    raceContainer.className = "race-container";
-    raceContainer.id = venueId;
-    venueContainer.appendChild(raceContainer);
-
-    venueHeader.addEventListener("click", e => {
-      if (!e.target.closest(".venue-controls")) {
-        raceContainer.style.display = raceContainer.style.display === "block" ? "none" : "block";
-      }
-    });
-
-    venueBlock.races.forEach(race => {
-      const now = new Date();
-      const [h, m] = race.closed_at.split(":").map(Number);
-      const deadline = new Date(now);
-      deadline.setHours(h, m, 0, 0);
-      const isPast = now > new Date(deadline.getTime() + 5 * 60 * 1000);  // 締切＋5分
-
-      const raceId = `${venueBlock.venue}_${race.race_number}`;
-      const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
-      if (mode === "on" && !isOn) return;
-      if (mode === "girls" && race.class_category !== "L級") return;
-
-      const card = document.createElement("div");
-      card.className = "race-card" + (isPast ? " past" : "");
-      card.innerHTML = `
-        <strong>${race.race_number}R - ${race.class_category}</strong><br />
-        締切: ${race.closed_at} ／ 発走: ${race.start_time ?? "?"}<br />
-        選手: ${race.players.join("、")}<br />
-        <label>
-          <input type="checkbox" class="toggle" id="toggle-${raceId}">
-        </label>
-      `;
-      raceContainer.appendChild(card);
-
-      const toggle = card.querySelector(`#toggle-${raceId}`);
-      if (toggle) {
-        toggle.checked = isOn;
-        toggle.disabled = isPast;
-        toggle.addEventListener("change", () => {
-          if (toggle.checked) {
-            localStorage.setItem(`toggle-${raceId}`, "on");
-            scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
-          } else {
-            localStorage.removeItem(`toggle-${raceId}`);
-          }
-        });
-
-        if (toggle.checked) {
-          scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
-        }
-      }
-    });
-
-    if (raceContainer.innerHTML.trim() !== "") {
-      raceList.appendChild(venueContainer);
-    }
-  });
-}
-
 function toggleAll(containerId, turnOn) {
   const container = document.getElementById(containerId);
   const checkboxes = container.querySelectorAll("input[type='checkbox']");
@@ -153,6 +8,7 @@ function toggleAll(containerId, turnOn) {
       localStorage.setItem(`toggle-${raceId}`, "on");
     } else {
       localStorage.removeItem(`toggle-${raceId}`);
+      localStorage.removeItem(`notifyTime-${raceId}`);
     }
   });
 }
@@ -170,6 +26,7 @@ function toggleGirls(turnOn) {
             scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
           } else {
             localStorage.removeItem(`toggle-${raceId}`);
+            localStorage.removeItem(`notifyTime-${raceId}`);
           }
         }
       }
@@ -213,7 +70,7 @@ function sendPushRequest() {
 
 function activateRaceByText() {
   const input = document.getElementById("race-input").value.trim();
-  const lines = input.split(/\r?\n|,/); // 改行・カンマ両対応
+  const lines = input.split(/\\r?\\n|,/); // 改行・カンマ両対応
 
   if (input === "") {
     alert("⚠️ 入力が空です");
@@ -226,7 +83,7 @@ function activateRaceByText() {
   lines.forEach(line => {
     const trimmed = line.trim();
     if (!trimmed) return;
-    const match = trimmed.match(/^(.+?)(\d{1,2})R$/);
+    const match = trimmed.match(/^(.+?)(\\d{1,2})R$/);
     if (!match) {
       failList.push(trimmed);
       return;
@@ -239,6 +96,7 @@ function activateRaceByText() {
     if (toggle) {
       toggle.checked = true;
       localStorage.setItem(`toggle-${raceId}`, "on");
+      localStorage.setItem(`notifyTime-${raceId}`, localStorage.getItem("notifyMinutes") || "1");
       const race = findRaceInfo(raceId);
       if (race) {
         scheduleNotification(`${venue} 第${number}R`, race.closed_at, raceId);
@@ -251,7 +109,7 @@ function activateRaceByText() {
 
   let message = `✅ ${successCount}件 通知ONにしました。`;
   if (failList.length > 0) {
-    message += `\n❌ 該当レースが見つかりません: ${failList.join(", ")}`;
+    message += `\\n❌ 該当レースが見つかりません: ${failList.join(", ")}`;
   }
   alert(message);
 }
@@ -266,8 +124,6 @@ function findRaceInfo(raceId) {
   }
   return null;
 }
-
-// ========== 設定画面 ==========
 function renderSettings() {
   raceList.innerHTML = "";
 
@@ -302,7 +158,6 @@ function renderSettings() {
     localStorage.setItem("notifyMinutes", select.value);
   });
 }
-
 
 function triggerTestNotify() {
   Notification.requestPermission().then(p => {
@@ -344,28 +199,21 @@ function resetData() {
 tabAll.addEventListener("click", () => {
   tabAll.classList.add("active");
   tabOn.classList.remove("active");
-  tabFlat.classList.remove("active");
+  settingsButton.classList.remove("active");
   renderRaces("all");
 });
 
 tabOn.addEventListener("click", () => {
   tabOn.classList.add("active");
   tabAll.classList.remove("active");
-  tabFlat.classList.remove("active");
+  settingsButton.classList.remove("active");
   renderRaces("on");
 });
 
-tabFlat.addEventListener("click", () => {
-  tabFlat.classList.add("active");
-  tabAll.classList.remove("active");
-  tabOn.classList.remove("active");
-  renderRaces("flat");
-});
-
 settingsButton.addEventListener("click", () => {
+  settingsButton.classList.add("active");
   tabAll.classList.remove("active");
   tabOn.classList.remove("active");
-  tabFlat.classList.remove("active");
   renderSettings();
 });
 
