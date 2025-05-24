@@ -6,7 +6,7 @@ const raceList = document.getElementById("race-list");
 const notifySelect = document.getElementById("notify-minutes");
 const tabAll = document.getElementById("tab-all");
 const tabOn = document.getElementById("tab-on");
-const tabGirls = document.getElementById("tab-girls"); // 👈 ガールズ用タブを取得
+const tabGirls = document.getElementById("tab-girls");
 const testBtn = document.getElementById("test-notify");
 
 notifySelect.value = localStorage.getItem("notifyMinutes") || "1";
@@ -50,6 +50,17 @@ function fetchRaceData() {
 function renderRaces(mode = "all") {
   raceList.innerHTML = "";
 
+  if (mode === "girls") {
+    const girlControl = document.createElement("div");
+    girlControl.style.marginBottom = "1rem";
+    girlControl.innerHTML = `
+      <button onclick="toggleGirls(true)" style="padding:4px 8px; margin-right:6px;">👩 ガールズすべてON</button>
+      <button onclick="toggleGirls(false)" style="padding:4px 8px;">🚫 ガールズすべてOFF</button>
+      <button onclick="sendPushRequest()" style="padding:4px 8px; background-color:#ff9800; color:white; border:none; border-radius:4px; margin-left:12px;">🚀 通知依頼！</button>
+    `;
+    raceList.appendChild(girlControl);
+  }
+
   raceData.forEach((venueBlock, index) => {
     const venueContainer = document.createElement("div");
     venueContainer.className = "venue-container";
@@ -85,7 +96,7 @@ function renderRaces(mode = "all") {
       const raceId = `${venueBlock.venue}_${race.race_number}`;
       const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
       if (mode === "on" && !isOn) return;
-      if (mode === "girls" && race.class_category !== "L級") return; // 👈 L級以外を除外
+      if (mode === "girls" && race.class_category !== "L級") return;
 
       const card = document.createElement("div");
       card.className = "race-card";
@@ -120,6 +131,45 @@ function renderRaces(mode = "all") {
       raceList.appendChild(venueContainer);
     }
   });
+}
+
+function toggleAll(containerId, turnOn) {
+  const container = document.getElementById(containerId);
+  const checkboxes = container.querySelectorAll("input[type='checkbox']");
+  checkboxes.forEach(cb => {
+    const raceId = cb.id.replace("toggle-", "");
+    cb.checked = turnOn;
+    if (turnOn) {
+      localStorage.setItem(`toggle-${raceId}`, "on");
+    } else {
+      localStorage.removeItem(`toggle-${raceId}`);
+    }
+  });
+}
+
+function toggleGirls(turnOn) {
+  raceData.forEach(venueBlock => {
+    venueBlock.races.forEach(race => {
+      if (race.class_category === "L級") {
+        const raceId = `${venueBlock.venue}_${race.race_number}`;
+        const toggle = document.getElementById(`toggle-${raceId}`);
+        if (toggle) {
+          toggle.checked = turnOn;
+          if (turnOn) {
+            localStorage.setItem(`toggle-${raceId}`, "on");
+            scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
+          } else {
+            localStorage.removeItem(`toggle-${raceId}`);
+          }
+        }
+      }
+    });
+  });
+}
+
+function sendPushRequest() {
+  alert("🚀 Pushサーバーに通知依頼を送信！（※後で連携）");
+  // TODO: push server にPOST処理などをここで実装
 }
 
 tabAll.addEventListener("click", () => {
