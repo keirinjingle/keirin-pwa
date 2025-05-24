@@ -147,12 +147,28 @@
     <button id="test-notify">🔔 5秒後に通知</button>
   </div>
 
-  <div class="tabs">
-    <button class="tab-button active" id="tab-all">すべてのレース</button>
-    <button class="tab-button" id="tab-on">🔔通知中のレース</button>
-    <button class="tab-button" id="tab-girls">👩ガールズ</button>
-    <button class="tab-button" id="tab-flat">🗂一覧</button>
-  </div>
+<!-- 🚀 通知依頼ボタン（tabsの上に移動） -->
+<div style="text-align:center; margin-bottom: 1rem;">
+  <button onclick="sendPushRequest()" style="
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  ">
+    🚀 通知依頼！
+  </button>
+</div>
+
+<div class="tabs">
+  <button class="tab-button active" id="tab-all">すべてのレース</button>
+  <button class="tab-button" id="tab-on">🔔通知中のレース</button>
+  <button class="tab-button" id="tab-girls">👩ガールズ</button>
+  <button class="tab-button" id="tab-flat">🗂一覧</button>
+</div>
+
 
   <div class="input-section">
     <input type="text" id="race-input" placeholder="例: 立川1R" />
