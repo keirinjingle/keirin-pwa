@@ -114,35 +114,9 @@
     .toggle:checked::before {
       transform: translateX(16px);
     }
-
-    /* ✅ 常時表示の強制リロードボタン */
-    .force-reload-fixed {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 999;
-    }
-    .force-reload-fixed button {
-      background-color: #f44336;
-      color: white;
-      font-size: 0.8rem;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-    .force-reload-fixed button:hover {
-      opacity: 0.9;
-    }
   </style>
 </head>
 <body>
-  <!-- ✅ 固定配置の強制リロードボタン -->
-  <div class="force-reload-fixed">
-    <button onclick="forceReload()">⚠️ 強制リロード</button>
-  </div>
-
   <header>
     <img src="icon.png" alt="icon" />
     <h1>Keirin Timer</h1>
@@ -158,16 +132,17 @@
       <option value="5">5分前</option>
     </select>
     <button id="test-notify">🔔 5秒後に通知</button>
+    <button onclick="forceReload()" style="background-color:#f44336; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem;">⚠️ 強制リロード</button>
   </div>
 
   <div class="tabs">
     <button class="tab-button active" id="tab-all">すべてのレース</button>
     <button class="tab-button" id="tab-on">🔔通知中のレース</button>
+    <button class="tab-button" id="tab-girls">👩ガールズ</button>
   </div>
 
   <div id="race-list">読み込み中...</div>
 
-  <!-- 🔧 強制リロードスクリプト -->
   <script>
     function forceReload() {
       if ('caches' in window) {
@@ -186,7 +161,6 @@
       }
     }
   </script>
-
   <script src="main.js?v=1"></script>
 </body>
 </html>
