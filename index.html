@@ -9,24 +9,33 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f9f9f9;
+      background-color: #fdf4e7;
       color: #333;
       margin: 0;
       padding: 1rem;
     }
-    header {
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       margin-bottom: 1rem;
     }
-    header img {
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .header-left img {
       height: 32px;
     }
     h1 {
       font-size: 1.8rem;
       margin: 0;
+    }
+    .header-right {
+      display: flex;
+      gap: 0.5rem;
     }
     .notify-button {
       font-size: 1.8rem;
@@ -41,14 +50,6 @@
     }
     .notify-button:hover {
       background-color: #e68900;
-    }
-
-    .setting {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
     }
     .tabs {
       display: flex;
@@ -67,6 +68,17 @@
     .tab-button.active {
       background-color: #4caf50;
       color: white;
+    }
+    .input-section {
+      margin-bottom: 1rem;
+    }
+    .input-section input {
+      padding: 6px;
+      width: 140px;
+    }
+    .input-section button {
+      padding: 6px 10px;
+      margin-left: 4px;
     }
     .venue-container {
       background-color: white;
@@ -136,54 +148,37 @@
     .toggle:checked::before {
       transform: translateX(16px);
     }
-    .input-section {
-      margin: 1rem 0;
-    }
-    .input-section input {
-      padding: 6px;
-      width: 140px;
-    }
-    .input-section button {
-      padding: 6px 10px;
-      margin-left: 4px;
-    }
   </style>
 </head>
 <body>
-  <header>
-    <div style="display: flex; align-items: center; gap: 0.5rem;">
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
       <img src="icon.png" alt="icon" />
       <h1>Keirin Timer</h1>
     </div>
-    <button onclick="sendPushRequest()" class="notify-button">🚀通知！</button>
+    <div class="header-right">
+      <button class="tab-button" id="settings-button">⚙️設定</button>
+      <button class="notify-button" onclick="sendPushRequest()">🚀通知！</button>
+    </div>
   </header>
 
-  <div class="setting">
-    通知タイミング: 
-    <select id="notify-minutes">
-      <option value="1">1分前</option>
-      <option value="2">2分前</option>
-      <option value="3">3分前</option>
-      <option value="4">4分前</option>
-      <option value="5">5分前</option>
-    </select>
-    <button id="test-notify">🔔 5秒後に通知</button>
-  </div>
-
+  <!-- タブ -->
   <div class="tabs">
-    <button class="tab-button active" id="tab-all">すべてのレース</button>
-    <button class="tab-button" id="tab-on">🔔通知中のレース</button>
-    <button class="tab-button" id="tab-girls">👩ガールズ</button>
-    <button class="tab-button" id="tab-flat">🗂一覧</button>
+    <button class="tab-button active" id="tab-all">すべて</button>
+    <button class="tab-button" id="tab-flat">🗂簡易表示</button>
+    <button class="tab-button" id="tab-on">🔔通知レース</button>
   </div>
 
+  <!-- テキスト入力 -->
   <div class="input-section">
     <input type="text" id="race-input" placeholder="例: 立川1R" />
-    <button onclick="activateRaceByText()">通知ONにする</button>
+    <button onclick="activateRaceByText()">テキストで登録</button>
   </div>
 
+  <!-- レース or 設定表示エリア -->
   <div id="race-list">読み込み中...</div>
-
-  <script src="main.js?v=1.51"></script>
+  <!-- JavaScript -->
+  <script src="main.js?v=1.52"></script>
 </body>
 </html>
