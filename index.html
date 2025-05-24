@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Keirin Timer</title>
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.png" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -29,14 +30,15 @@
     .setting {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 0.5rem;
       margin-bottom: 1rem;
+      flex-wrap: wrap;
     }
     .tabs {
       display: flex;
       gap: 1rem;
       margin-bottom: 1rem;
+      flex-wrap: wrap;
     }
     .tab-button {
       padding: 0.5rem 1rem;
@@ -114,6 +116,17 @@
     .toggle:checked::before {
       transform: translateX(16px);
     }
+    .input-section {
+      margin: 1rem 0;
+    }
+    .input-section input {
+      padding: 6px;
+      width: 140px;
+    }
+    .input-section button {
+      padding: 6px 10px;
+      margin-left: 4px;
+    }
   </style>
 </head>
 <body>
@@ -132,35 +145,22 @@
       <option value="5">5分前</option>
     </select>
     <button id="test-notify">🔔 5秒後に通知</button>
-    <button onclick="forceReload()" style="background-color:#f44336; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.8rem;">⚠️ 強制リロード</button>
   </div>
 
   <div class="tabs">
     <button class="tab-button active" id="tab-all">すべてのレース</button>
     <button class="tab-button" id="tab-on">🔔通知中のレース</button>
     <button class="tab-button" id="tab-girls">👩ガールズ</button>
+    <button class="tab-button" id="tab-flat">🗂一覧</button>
+  </div>
+
+  <div class="input-section">
+    <input type="text" id="race-input" placeholder="例: 立川1R" />
+    <button onclick="activateRaceByText()">通知ONにする</button>
   </div>
 
   <div id="race-list">読み込み中...</div>
 
-  <script>
-    function forceReload() {
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          for (let name of names) caches.delete(name);
-        });
-      }
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          for (let reg of regs) reg.unregister();
-        }).finally(() => {
-          location.reload(true);
-        });
-      } else {
-        location.reload(true);
-      }
-    }
-  </script>
-  <script src="main.js?v=1"></script>
+  <script src="main.js"></script>
 </body>
 </html>
