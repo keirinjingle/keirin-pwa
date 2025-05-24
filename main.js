@@ -43,14 +43,14 @@ fetch(API_URL)
   })
   .catch(err => {
     console.error("Fetch failed:", err);
-    raceList.innerHTML = `<p style=\"color:red;\">❌ データの読み込みに失敗しました：${err.message}</p>`;
+    raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
   });
 
 // ========== 通知予約関数 ==========
 function scheduleNotification(title, deadline, raceId) {
   Notification.requestPermission().then(permission => {
     if (permission !== "granted") return;
-    const [h, m] = deadline.split(":" ).map(Number);
+    const [h, m] = deadline.split(":").map(Number);
     const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
     const now = new Date();
     const target = new Date();
@@ -76,9 +76,8 @@ function renderRaces(mode = "all") {
     const girlControl = document.createElement("div");
     girlControl.style.marginBottom = "1rem";
     girlControl.innerHTML = `
-      <button onclick=\"toggleGirls(true)\" style=\"padding:4px 8px; margin-right:6px;\">👩 ガールズすべてON</button>
-      <button onclick=\"toggleGirls(false)\" style=\"padding:4px 8px;\">🚫 ガールズすべてOFF</button>
-      <button onclick=\"sendPushRequest()\" style=\"padding:4px 8px; background-color:#ff9800; color:white; border:none; border-radius:4px; margin-left:12px;\">🚀 通知依頼！</button>
+      <button onclick="toggleGirls(true)" style="padding:4px 8px; margin-right:6px;">👩 ガールズすべてON</button>
+      <button onclick="toggleGirls(false)" style="padding:4px 8px;">🚫 ガールズすべてOFF</button>
     `;
     raceList.appendChild(girlControl);
   }
@@ -107,7 +106,7 @@ function renderRaces(mode = "all") {
       row.innerHTML = `
         <strong>${race.venue} ${race.number}R</strong>（${race.class_category}） - 締切: ${race.closed_at} <br />
         <label>
-          <input type=\"checkbox\" class=\"toggle\" id=\"toggle-${race.raceId}\">
+          <input type="checkbox" class="toggle" id="toggle-${race.raceId}">
         </label>
       `;
       raceList.appendChild(row);
@@ -141,9 +140,9 @@ function renderRaces(mode = "all") {
     venueHeader.className = "venue-header";
     venueHeader.innerHTML = `
       <span>${venueBlock.venue}（${venueBlock.grade}）</span>
-      <div class=\"venue-controls\">
-        <button onclick=\"toggleAll('${venueId}', true)\">すべてON</button>
-        <button onclick=\"toggleAll('${venueId}', false)\">すべてOFF</button>
+      <div class="venue-controls">
+        <button onclick="toggleAll('${venueId}', true)">すべてON</button>
+        <button onclick="toggleAll('${venueId}', false)">すべてOFF</button>
       </div>
     `;
     venueContainer.appendChild(venueHeader);
@@ -160,7 +159,7 @@ function renderRaces(mode = "all") {
     });
 
     venueBlock.races.forEach(race => {
-      const deadline = new Date(`${today.slice(0,4)}-${today.slice(4,6)}-${today.slice(6)}T${race.closed_at}`);
+      const deadline = new Date(`${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6)}T${race.closed_at}`);
       const now = new Date();
       if (now > deadline) return;
 
@@ -176,7 +175,7 @@ function renderRaces(mode = "all") {
         締切: ${race.closed_at} ／ 発走: ${race.start_time}<br />
         選手: ${race.players.join("、")}<br />
         <label>
-          <input type=\"checkbox\" class=\"toggle\" id=\"toggle-${raceId}\">
+          <input type="checkbox" class="toggle" id="toggle-${raceId}">
         </label>
       `;
       raceContainer.appendChild(card);
@@ -241,18 +240,17 @@ function toggleGirls(turnOn) {
 
 function sendPushRequest() {
   alert("🚀 Pushサーバーに通知依頼を送信！（※後で連携）");
-  // TODO: fetchなどでPushサーバーに送信処理を追加
+  // TODO: fetchで通知予約をサーバーへ送る処理を実装
 }
 
 function activateRaceByText() {
   const input = document.getElementById("race-input").value.trim();
-  const lines = input.split(/\r?\n/); // 改行で分割
+  const lines = input.split(/\r?\n/);
 
-if (input === "") {
-  alert("⚠️ 入力が空です");
-  return;
-}
-
+  if (input === "") {
+    alert("⚠️ 入力が空です");
+    return;
+  }
 
   let successCount = 0;
   let failList = [];
@@ -290,7 +288,6 @@ if (input === "") {
   alert(message);
 }
 
-
 function findRaceInfo(raceId) {
   for (const venueBlock of raceData) {
     for (const race of venueBlock.races) {
@@ -302,6 +299,7 @@ function findRaceInfo(raceId) {
   return null;
 }
 
+// ========== タブ切り替え ==========
 tabAll.addEventListener("click", () => {
   tabAll.classList.add("active");
   tabOn.classList.remove("active");
