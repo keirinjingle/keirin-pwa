@@ -30,36 +30,22 @@ testBtn.addEventListener("click", () => {
 
 let raceData = [];
 
-function fetchRaceData() {
-  raceList.innerHTML = "読み込み中...";
-
-  fetch(API_URL)
-    .then(res => {
-      if (!res.ok) throw new Error("データが見つかりません");
-      return res.json();
-    })
-    .then(data => {
-      raceData = data;
-      renderRaces("all");
-    })
-    .catch(err => {
-      raceList.innerHTML = `<p style="color:red;">❌ データの読み込みに失敗しました：${err.message}</p>`;
-    });
-}
+fetch(API_URL)
+  .then(res => {
+    if (!res.ok) throw new Error("データが見つかりません");
+    return res.json();
+  })
+  .then(data => {
+    raceData = data;
+    renderRaces("all");
+  })
+  .catch(err => {
+    console.error("Fetch failed:", err);
+    raceList.innerHTML = `<p style=\"color:red;\">❌ データの読み込みに失敗しました：${err.message}</p>`;
+  });
 
 function renderRaces(mode = "all") {
   raceList.innerHTML = "";
-
-  if (mode === "girls") {
-    const girlControl = document.createElement("div");
-    girlControl.style.marginBottom = "1rem";
-    girlControl.innerHTML = `
-      <button onclick="toggleGirls(true)" style="padding:4px 8px; margin-right:6px;">👩 ガールズすべてON</button>
-      <button onclick="toggleGirls(false)" style="padding:4px 8px;">🚫 ガールズすべてOFF</button>
-      <button onclick="sendPushRequest()" style="padding:4px 8px; background-color:#ff9800; color:white; border:none; border-radius:4px; margin-left:12px;">🚀 通知依頼！</button>
-    `;
-    raceList.appendChild(girlControl);
-  }
 
   raceData.forEach((venueBlock, index) => {
     const venueContainer = document.createElement("div");
@@ -70,9 +56,9 @@ function renderRaces(mode = "all") {
     venueHeader.className = "venue-header";
     venueHeader.innerHTML = `
       <span>${venueBlock.venue}（${venueBlock.grade}）</span>
-      <div class="venue-controls">
-        <button onclick="toggleAll('${venueId}', true)">すべてON</button>
-        <button onclick="toggleAll('${venueId}', false)">すべてOFF</button>
+      <div class=\"venue-controls\">
+        <button onclick=\"toggleAll('${venueId}', true)\">すべてON</button>
+        <button onclick=\"toggleAll('${venueId}', false)\">すべてOFF</button>
       </div>
     `;
     venueContainer.appendChild(venueHeader);
@@ -96,7 +82,7 @@ function renderRaces(mode = "all") {
       const raceId = `${venueBlock.venue}_${race.race_number}`;
       const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
       if (mode === "on" && !isOn) return;
-      if (mode === "girls" && race.class_category !== "L級") return;
+      if (mode === "girls" && (!race || race.class_category !== "L級")) return;
 
       const card = document.createElement("div");
       card.className = "race-card";
@@ -105,25 +91,26 @@ function renderRaces(mode = "all") {
         締切: ${race.closed_at} ／ 発走: ${race.start_time}<br />
         選手: ${race.players.join("、")}<br />
         <label>
-          <input type="checkbox" class="toggle" id="toggle-${raceId}">
+          <input type=\"checkbox\" class=\"toggle\" id=\"toggle-${raceId}\">
         </label>
       `;
       raceContainer.appendChild(card);
 
       const toggle = card.querySelector(`#toggle-${raceId}`);
-      toggle.checked = isOn;
+      if (toggle) {
+        toggle.checked = isOn;
+        toggle.addEventListener("change", () => {
+          if (toggle.checked) {
+            localStorage.setItem(`toggle-${raceId}`, "on");
+            scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
+          } else {
+            localStorage.removeItem(`toggle-${raceId}`);
+          }
+        });
 
-      toggle.addEventListener("change", () => {
         if (toggle.checked) {
-          localStorage.setItem(`toggle-${raceId}`, "on");
           scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
-        } else {
-          localStorage.removeItem(`toggle-${raceId}`);
         }
-      });
-
-      if (toggle.checked) {
-        scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
       }
     });
 
@@ -131,45 +118,6 @@ function renderRaces(mode = "all") {
       raceList.appendChild(venueContainer);
     }
   });
-}
-
-function toggleAll(containerId, turnOn) {
-  const container = document.getElementById(containerId);
-  const checkboxes = container.querySelectorAll("input[type='checkbox']");
-  checkboxes.forEach(cb => {
-    const raceId = cb.id.replace("toggle-", "");
-    cb.checked = turnOn;
-    if (turnOn) {
-      localStorage.setItem(`toggle-${raceId}`, "on");
-    } else {
-      localStorage.removeItem(`toggle-${raceId}`);
-    }
-  });
-}
-
-function toggleGirls(turnOn) {
-  raceData.forEach(venueBlock => {
-    venueBlock.races.forEach(race => {
-      if (race.class_category === "L級") {
-        const raceId = `${venueBlock.venue}_${race.race_number}`;
-        const toggle = document.getElementById(`toggle-${raceId}`);
-        if (toggle) {
-          toggle.checked = turnOn;
-          if (turnOn) {
-            localStorage.setItem(`toggle-${raceId}`, "on");
-            scheduleNotification(`${venueBlock.venue} 第${race.race_number}R`, race.closed_at, raceId);
-          } else {
-            localStorage.removeItem(`toggle-${raceId}`);
-          }
-        }
-      }
-    });
-  });
-}
-
-function sendPushRequest() {
-  alert("🚀 Pushサーバーに通知依頼を送信！（※後で連携）");
-  // TODO: push server にPOST処理などをここで実装
 }
 
 tabAll.addEventListener("click", () => {
@@ -192,3 +140,7 @@ tabGirls.addEventListener("click", () => {
   tabOn.classList.remove("active");
   renderRaces("girls");
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js');
+}
