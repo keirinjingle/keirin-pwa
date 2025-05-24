@@ -14,6 +14,7 @@
       margin: 0;
       padding: 1rem;
     }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -25,13 +26,6 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-    }
-    .header-left img {
-      height: 32px;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin: 0;
     }
     .header-right {
       display: flex;
@@ -51,12 +45,7 @@
     .notify-button:hover {
       background-color: #e68900;
     }
-    .tabs {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
+
     .tab-button {
       padding: 0.5rem 1rem;
       border: none;
@@ -69,8 +58,24 @@
       background-color: #4caf50;
       color: white;
     }
-    .input-section {
+
+    .tabs {
+      display: flex;
+      gap: 1rem;
       margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .setting {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .input-section {
+      margin: 1rem 0;
     }
     .input-section input {
       padding: 6px;
@@ -80,6 +85,7 @@
       padding: 6px 10px;
       margin-left: 4px;
     }
+
     .venue-container {
       background-color: white;
       border-radius: 8px;
@@ -108,6 +114,7 @@
     .venue-controls button:hover {
       background-color: #ccc;
     }
+
     .race-container {
       padding: 0 1rem 1rem;
       display: none;
@@ -120,6 +127,7 @@
       opacity: 0.5;
       background-color: #eee;
     }
+
     .toggle {
       appearance: none;
       width: 40px;
@@ -151,7 +159,7 @@
   </style>
 </head>
 <body>
-  <!-- ヘッダー -->
+  <!-- 上部ヘッダー -->
   <header class="header">
     <div class="header-left">
       <img src="icon.png" alt="icon" />
@@ -170,15 +178,16 @@
     <button class="tab-button" id="tab-on">🔔通知レース</button>
   </div>
 
-  <!-- テキスト入力 -->
+  <!-- テキスト入力欄 -->
   <div class="input-section">
     <input type="text" id="race-input" placeholder="例: 立川1R" />
     <button onclick="activateRaceByText()">テキストで登録</button>
   </div>
 
-  <!-- レース or 設定表示エリア -->
+  <!-- メイン表示部（レースリスト or 設定） -->
   <div id="race-list">読み込み中...</div>
-  <!-- JavaScript -->
+
+  <!-- JavaScript 読み込み（キャッシュ回避）-->
   <script src="main.js?v=1.52"></script>
 </body>
 </html>
