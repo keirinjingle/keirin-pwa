@@ -1,5 +1,15 @@
 // ========== 通知設定 ==========
-const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+// 5時前は前日を取得
+function getEffectiveDateString() {
+  const now = new Date();
+  if (now.getHours() < 5) {
+    now.setDate(now.getDate() - 1);
+  }
+  return now.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+const today = getEffectiveDateString();
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
 const raceList = document.getElementById("race-list");
@@ -68,7 +78,6 @@ function scheduleNotification(title, deadline, raceId) {
     }, diff);
   });
 }
-
 function renderRaces(mode = "all") {
   raceList.innerHTML = "";
 
@@ -82,55 +91,6 @@ function renderRaces(mode = "all") {
     raceList.appendChild(girlControl);
   }
 
-  if (mode === "flat") {
-    const flatList = [];
-    raceData.forEach(venue => {
-      venue.races.forEach(race => {
-        flatList.push({
-          venue: venue.venue,
-          number: race.race_number,
-          closed_at: race.closed_at,
-          class_category: race.class_category,
-          raceId: `${venue.venue}_${race.race_number}`,
-          players: race.players
-        });
-      });
-    });
-
-    flatList.sort((a, b) => a.closed_at.localeCompare(b.closed_at));
-
-    flatList.forEach(race => {
-      const isOn = localStorage.getItem(`toggle-${race.raceId}`) === "on";
-      const row = document.createElement("div");
-      row.className = "race-card";
-      row.innerHTML = `
-        <strong>${race.venue} ${race.number}R</strong>（${race.class_category}） - 締切: ${race.closed_at} <br />
-        <label>
-          <input type="checkbox" class="toggle" id="toggle-${race.raceId}">
-        </label>
-      `;
-      raceList.appendChild(row);
-
-      const toggle = row.querySelector(`#toggle-${race.raceId}`);
-      if (toggle) {
-        toggle.checked = isOn;
-        toggle.addEventListener("change", () => {
-          if (toggle.checked) {
-            localStorage.setItem(`toggle-${race.raceId}`, "on");
-            scheduleNotification(`${race.venue} 第${race.number}R`, race.closed_at, race.raceId);
-          } else {
-            localStorage.removeItem(`toggle-${race.raceId}`);
-          }
-        });
-
-        if (toggle.checked) {
-          scheduleNotification(`${race.venue} 第${race.number}R`, race.closed_at, race.raceId);
-        }
-      }
-    });
-    return;
-  }
-
   raceData.forEach((venueBlock, index) => {
     const venueContainer = document.createElement("div");
     venueContainer.className = "venue-container";
@@ -139,7 +99,7 @@ function renderRaces(mode = "all") {
     const venueHeader = document.createElement("div");
     venueHeader.className = "venue-header";
     venueHeader.innerHTML = `
-      <span>${venueBlock.venue}（${venueBlock.grade}）</span>
+      <span>${venueBlock.venue}（${venueBlock.grade ?? "グレード不明"}）</span>
       <div class="venue-controls">
         <button onclick="toggleAll('${venueId}', true)">すべてON</button>
         <button onclick="toggleAll('${venueId}', false)">すべてOFF</button>
@@ -161,18 +121,18 @@ function renderRaces(mode = "all") {
     venueBlock.races.forEach(race => {
       const deadline = new Date(`${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6)}T${race.closed_at}`);
       const now = new Date();
-      if (now > deadline) return;
+      const isPast = now > deadline;
 
       const raceId = `${venueBlock.venue}_${race.race_number}`;
       const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
       if (mode === "on" && !isOn) return;
-      if (mode === "girls" && (!race || race.class_category !== "L級")) return;
+      if (mode === "girls" && race.class_category !== "L級") return;
 
       const card = document.createElement("div");
-      card.className = "race-card";
+      card.className = "race-card" + (isPast ? " past" : "");
       card.innerHTML = `
         <strong>${race.race_number}R - ${race.class_category}</strong><br />
-        締切: ${race.closed_at} ／ 発走: ${race.start_time}<br />
+        締切: ${race.closed_at} ／ 発走: ${race.start_time ?? "?"}<br />
         選手: ${race.players.join("、")}<br />
         <label>
           <input type="checkbox" class="toggle" id="toggle-${raceId}">
@@ -183,6 +143,7 @@ function renderRaces(mode = "all") {
       const toggle = card.querySelector(`#toggle-${raceId}`);
       if (toggle) {
         toggle.checked = isOn;
+        toggle.disabled = isPast; // 締切後はチェック不可（任意）
         toggle.addEventListener("change", () => {
           if (toggle.checked) {
             localStorage.setItem(`toggle-${raceId}`, "on");
@@ -237,10 +198,39 @@ function toggleGirls(turnOn) {
     });
   });
 }
-
 function sendPushRequest() {
-  alert("🚀 Pushサーバーに通知依頼を送信！（※後で連携）");
-  // TODO: fetchで通知予約をサーバーへ送る処理を実装
+  const notifyMinutes = localStorage.getItem("notifyMinutes") || "1";
+  const selectedRaces = [];
+
+  for (const key in localStorage) {
+    if (key.startsWith("toggle-") && localStorage.getItem(key) === "on") {
+      const raceId = key.replace("toggle-", "");
+      selectedRaces.push(raceId);
+    }
+  }
+
+  if (selectedRaces.length === 0) {
+    alert("⚠️ 通知ONのレースがありません。");
+    return;
+  }
+
+  fetch("https://your-fly-app.fly.dev/push", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      races: selectedRaces,
+      notifyMinutes: notifyMinutes
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("✅ 通知依頼を送信しました！");
+    console.log("送信内容:", data);
+  })
+  .catch(err => {
+    alert("❌ 通知依頼に失敗しました");
+    console.error(err);
+  });
 }
 
 function activateRaceByText() {
@@ -332,6 +322,7 @@ tabFlat.addEventListener("click", () => {
   renderRaces("flat");
 });
 
+// ========== Service Worker 登録 ==========
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js');
 }
