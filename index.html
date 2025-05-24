@@ -9,7 +9,7 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #fdf4e7;
+      background-color: #f5f5f5; /* エモい淡グレー */
       color: #333;
       margin: 0;
       padding: 1rem;
@@ -27,10 +27,14 @@
       align-items: center;
       gap: 0.5rem;
     }
+    .header-left img {
+      height: 32px;  /* 小さめアイコン */
+    }
     .header-right {
       display: flex;
       gap: 0.5rem;
     }
+
     .notify-button {
       font-size: 1.8rem;
       padding: 0.2em 0.6em;
@@ -66,14 +70,6 @@
       flex-wrap: wrap;
     }
 
-    .setting {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
     .input-section {
       margin: 1rem 0;
     }
@@ -93,6 +89,7 @@
       margin-bottom: 1rem;
       overflow: hidden;
     }
+
     .venue-header {
       background-color: #eee;
       padding: 0.75rem 1rem;
@@ -156,10 +153,40 @@
     .toggle:checked::before {
       transform: translateX(16px);
     }
+
+    /* 設定ボタン群 */
+    .setting-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    .setting-buttons button {
+      background-color: #ff9800;
+      color: white;
+      font-size: 1.2rem;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .setting-buttons button:hover {
+      background-color: #e68900;
+      transform: translateY(-1px);
+    }
+
+    #notify-minutes-setting {
+      font-size: 1.2rem;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
-  <!-- 上部ヘッダー -->
+  <!-- ヘッダー -->
   <header class="header">
     <div class="header-left">
       <img src="icon.png" alt="icon" />
@@ -174,20 +201,20 @@
   <!-- タブ -->
   <div class="tabs">
     <button class="tab-button active" id="tab-all">すべて</button>
-    <button class="tab-button" id="tab-flat">🗂簡易表示</button>
+    <button class="tab-button" id="tab-flat">📋簡易表示</button>
     <button class="tab-button" id="tab-on">🔔通知レース</button>
   </div>
 
-  <!-- テキスト入力欄 -->
+  <!-- テキスト入力 -->
   <div class="input-section">
     <input type="text" id="race-input" placeholder="例: 立川1R" />
     <button onclick="activateRaceByText()">テキストで登録</button>
   </div>
 
-  <!-- メイン表示部（レースリスト or 設定） -->
+  <!-- レースまたは設定表示部 -->
   <div id="race-list">読み込み中...</div>
 
-  <!-- JavaScript 読み込み（キャッシュ回避）-->
+  <!-- main.js 読み込み（キャッシュ対策付き）-->
   <script src="main.js?v=1.52"></script>
 </body>
 </html>
