@@ -155,7 +155,15 @@
 
   testBtn.addEventListener("click", () => {
     Notification.requestPermission().then(p => {
+      console.log("通知許可の状態:", p);
       if (p !== "granted") return;
+
+      // 即時通知（確認用）
+      new Notification("✅ 通知テスト成功", {
+        body: "この通知は即座に表示されました。",
+      });
+
+      // 5秒後の通知
       setTimeout(() => {
         new Notification("🔔 テスト通知", {
           body: "これは5秒後に届く通知のテストです。",
@@ -210,7 +218,6 @@
 
         const raceId = `${venueBlock.venue}_${race.race_number}`;
         const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
-
         if (mode === "on" && !isOn) return;
 
         const card = document.createElement("div");
