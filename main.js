@@ -1,5 +1,5 @@
 const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-const API_URL = `https://keirinjingle.github.io/date/${today}.json`;
+const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
 fetch(API_URL)
   .then(res => res.json())
