@@ -9,7 +9,7 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f5f5f5; /* エモい淡グレー */
+      background-color: #f5f5f5;
       color: #333;
       margin: 0;
       padding: 1rem;
@@ -28,7 +28,7 @@
       gap: 0.5rem;
     }
     .header-left img {
-      height: 32px;  /* 小さめアイコン */
+      height: 32px;
     }
     .header-right {
       display: flex;
@@ -68,6 +68,17 @@
       gap: 1rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 600px) {
+      .tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .tab-button {
+        width: 100%;
+      }
     }
 
     .input-section {
@@ -116,10 +127,6 @@
       padding: 0 1rem 1rem;
       display: none;
     }
-    .race-card {
-      border-bottom: 1px solid #eee;
-      padding: 0.75rem 0;
-    }
     .race-card.past {
       opacity: 0.5;
       background-color: #eee;
@@ -154,7 +161,6 @@
       transform: translateX(16px);
     }
 
-    /* 設定ボタン群 */
     .setting-buttons {
       display: flex;
       flex-direction: column;
@@ -186,7 +192,6 @@
   </style>
 </head>
 <body>
-  <!-- ヘッダー -->
   <header class="header">
     <div class="header-left">
       <img src="icon.png" alt="icon" />
@@ -200,8 +205,7 @@
 
   <!-- タブ -->
   <div class="tabs">
-    <button class="tab-button active" id="tab-all">すべて</button>
-    <button class="tab-button" id="tab-flat">📋簡易表示</button>
+    <button class="tab-button active" id="tab-all">📋すべて</button>
     <button class="tab-button" id="tab-on">🔔通知レース</button>
   </div>
 
@@ -211,10 +215,9 @@
     <button onclick="activateRaceByText()">テキストで登録</button>
   </div>
 
-  <!-- レースまたは設定表示部 -->
+  <!-- レース表示 or 設定表示 -->
   <div id="race-list">読み込み中...</div>
 
-  <!-- main.js 読み込み（キャッシュ対策付き）-->
-  <script src="main.js?v=1.53"></script>
+  <script src="main.js?v=1.55"></script>
 </body>
 </html>
