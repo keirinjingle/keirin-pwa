@@ -45,7 +45,8 @@
       font-size: 0.9rem;
     }
     .force-reload {
-      margin-top: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
     }
     .force-reload button {
       padding: 6px 12px;
@@ -166,12 +167,14 @@
     <button id="refresh-data">🔄 レース情報を再読み込み</button>
   </div>
 
+  <!-- ✅ 「読み込み中...」の前に強制リロードボタンを配置 -->
   <div class="force-reload">
     <button onclick="forceReload()">⚠️ 強制リロード（キャッシュクリア）</button>
   </div>
 
   <div id="race-list">読み込み中...</div>
 
+  <!-- ✅ 強制リロード用スクリプト -->
   <script>
     function forceReload() {
       if ('caches' in window) {
@@ -191,6 +194,7 @@
     }
   </script>
 
+  <!-- ✅ main.js 読み込み -->
   <script src="main.js?v=1"></script>
 </body>
 </html>
