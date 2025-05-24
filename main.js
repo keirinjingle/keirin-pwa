@@ -24,11 +24,7 @@ function getEffectiveDateString() {
 const today = getEffectiveDateString();
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
-const raceList = document.getElementById("race-list");
-const notifySelect = document.getElementById("notify-minutes");
-const tabAll = document.getElementById("tab-all");
-const tabOn = document.getElementById("tab-on");
-const settingsButton = document.getElementById("settings-button");
+
 let raceData = [];
 
 // ========== データ取得 ==========
@@ -377,24 +373,34 @@ function resetData() {
   }
 }
 
-// ========== タブ制御 ==========
-tabAll.addEventListener("click", () => {
-  tabAll.classList.add("active");
-  tabOn.classList.remove("active");
+// ========== タブ制御：新UI対応 ==========
+document.getElementById("tab-all").addEventListener("click", () => {
+  activateTab("tab-all");
   renderRaces("all");
 });
 
-tabOn.addEventListener("click", () => {
-  tabOn.classList.add("active");
-  tabAll.classList.remove("active");
+document.getElementById("tab-on").addEventListener("click", () => {
+  activateTab("tab-on");
   renderNotifiedRacesList();
 });
 
-settingsButton.addEventListener("click", () => {
-  tabAll.classList.remove("active");
-  tabOn.classList.remove("active");
+document.getElementById("tab-settings").addEventListener("click", () => {
+  activateTab("tab-settings");
   renderSettings();
 });
+
+document.getElementById("tab-push").addEventListener("click", () => {
+  activateTab("tab-push");
+  sendPushRequest();
+});
+
+function activateTab(id) {
+  document.querySelectorAll(".tab-button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+  document.getElementById(id).classList.add("active");
+}
+
 
 // ========== Service Worker ==========
 if ('serviceWorker' in navigator) {
