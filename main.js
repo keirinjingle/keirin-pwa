@@ -273,7 +273,7 @@ function renderSettings() {
 
   const container = document.createElement("div");
   container.className = "venue-container";
-  container.style.padding = "1.2rem";
+  container.style.padding = "1.5rem";
 
   container.innerHTML = `
     <div style="margin-bottom: 1rem;">
@@ -288,9 +288,9 @@ function renderSettings() {
     </div>
 
     <div class="setting-buttons">
-      <button onclick="triggerTestNotify()">🔔 テスト通知</button>
-      <button onclick="refetchData()">📥 データ再取得</button>
-      <button onclick="resetData()">🗑️ リセット</button>
+      <div><button onclick="triggerTestNotify()">🔔 テスト通知</button></div>
+      <div><button onclick="refetchData()">📥 データ再取得</button></div>
+      <div><button onclick="resetData()">🗑️ リセット</button></div>
     </div>
   `;
 
