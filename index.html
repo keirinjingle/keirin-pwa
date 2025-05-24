@@ -32,14 +32,26 @@
     .venue-header {
       margin-top: 1rem;
       padding: 0.5rem;
-      background-color: #f2f2f2;
-      cursor: pointer;
+      background-color: #eee;
       font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .venue-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .venue-controls button {
+      font-size: 0.8rem;
+      padding: 2px 6px;
     }
     .race-container {
       padding-left: 1rem;
       margin-bottom: 1rem;
       border-left: 2px solid #ccc;
+      display: none;
     }
     .race-card {
       border-bottom: 1px solid #ccc;
@@ -125,21 +137,34 @@
 
     raceData.forEach((venueBlock, index) => {
       const venueContainer = document.createElement("div");
-      venueContainer.className = "venue-container";
+      const venueId = `venue-${index}`;
 
       const venueHeader = document.createElement("div");
       venueHeader.className = "venue-header";
-      venueHeader.textContent = `${venueBlock.venue}（${venueBlock.grade}）`;
+      venueHeader.innerHTML = `
+        <span>${venueBlock.venue}（${venueBlock.grade}）</span>
+        <div class="venue-controls">
+          <button onclick="toggleAll('${venueId}', true)">すべてON</button>
+          <button onclick="toggleAll('${venueId}', false)">すべてOFF</button>
+        </div>
+      `;
       venueContainer.appendChild(venueHeader);
 
       const raceContainer = document.createElement("div");
       raceContainer.className = "race-container";
+      raceContainer.id = venueId;
       venueContainer.appendChild(raceContainer);
+
+      venueHeader.addEventListener("click", e => {
+        if (!e.target.closest(".venue-controls")) {
+          raceContainer.style.display = raceContainer.style.display === "block" ? "none" : "block";
+        }
+      });
 
       venueBlock.races.forEach(race => {
         const deadline = new Date(`${today.slice(0,4)}-${today.slice(4,6)}-${today.slice(6)}T${race.closed_at}`);
         const now = new Date();
-        if (now > deadline) return; // 締切後は表示しない
+        if (now > deadline) return;
 
         const raceId = `${venueBlock.venue}_${race.race_number}`;
         const isOn = localStorage.getItem(`toggle-${raceId}`) === "on";
@@ -181,9 +206,26 @@
     });
   }
 
+  function toggleAll(containerId, turnOn) {
+    const container = document.getElementById(containerId);
+    const checkboxes = container.querySelectorAll("input[type='checkbox']");
+    checkboxes.forEach(cb => {
+      const raceId = cb.id.replace("toggle-", "");
+      cb.checked = turnOn;
+      if (turnOn) {
+        localStorage.setItem(`toggle-${raceId}`, "on");
+        scheduleNotification(raceId.replace("_", " 第").replace(/$/, "R"), "", raceId);
+      } else {
+        localStorage.removeItem(`toggle-${raceId}`);
+      }
+    });
+  }
+
   function scheduleNotification(title, deadline, raceId) {
     Notification.requestPermission().then(permission => {
       if (permission !== "granted") return;
+
+      if (!deadline) return; // 一括ONのときは無視
 
       const [h, m] = deadline.split(":").map(Number);
       const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
