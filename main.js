@@ -24,7 +24,7 @@ function getEffectiveDateString() {
 const today = getEffectiveDateString();
 const API_URL = `https://keirinjingle.github.io/date/keirin_race_list_${today}.json`;
 
-
+const raceList = document.getElementById("race-list");
 let raceData = [];
 
 // ========== データ取得 ==========
@@ -63,6 +63,7 @@ function scheduleNotification(title, closedAt, raceId) {
     }, diff);
   });
 }
+
 // ========== レース表示 ==========
 function renderRaces(mode = "all") {
   raceList.innerHTML = "";
@@ -142,7 +143,7 @@ function renderRaces(mode = "all") {
   });
 }
 
-// ========== 通知一覧表示 ==========
+// ========== 通知ONレース一覧 ==========
 function renderNotifiedRacesList() {
   raceList.innerHTML = "";
 
@@ -196,6 +197,8 @@ function renderNotifiedRacesList() {
 
   raceList.appendChild(table);
 }
+
+// ========== その他の機能 ==========
 function toggleAll(containerId, turnOn) {
   const container = document.getElementById(containerId);
   const checkboxes = container.querySelectorAll("input[type='checkbox']");
@@ -373,7 +376,7 @@ function resetData() {
   }
 }
 
-// ========== タブ制御：新UI対応 ==========
+// ========== タブ制御（新：4ボタン対応） ==========
 document.getElementById("tab-all").addEventListener("click", () => {
   activateTab("tab-all");
   renderRaces("all");
@@ -400,7 +403,6 @@ function activateTab(id) {
   });
   document.getElementById(id).classList.add("active");
 }
-
 
 // ========== Service Worker ==========
 if ('serviceWorker' in navigator) {
