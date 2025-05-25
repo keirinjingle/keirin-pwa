@@ -353,6 +353,13 @@ function renderSettings() {
 
   raceList.appendChild(container);
 
+  // ✅ イベントバインドをここに移動
+  const pushBtn = document.getElementById("push-subscribe-btn");
+  if (pushBtn) {
+    pushBtn.addEventListener("click", registerPushSubscription);
+  }
+
+
   const select = document.getElementById("notify-minutes-setting");
   select.value = localStorage.getItem("notifyMinutes") || "1";
   select.addEventListener("change", () => {
