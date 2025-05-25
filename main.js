@@ -218,7 +218,7 @@ function sendPushRequest() {
   const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
   const uuid = localStorage.getItem("uuid");
   if (!uuid) {
-    alert("⚠️ まずPush購読をしてください（設定から）");
+    alert("⚠️ 最初に「設定」→「初期設定」を押してください。");
     return;
   }
 
@@ -343,7 +343,9 @@ function renderSettings() {
     </div>
 
     <div class="setting-buttons">
-      <div><button onclick="triggerTestNotify()">🔔 テスト通知</button></div>
+      <div><button onclick="triggerTestNotify()">🔔 テスト通知</button>
+      <div><button id="push-subscribe-btn">🔑 初期設定</button></div>
+    </div>
       <div><button onclick="refetchData()">📥 データ再取得</button></div>
       <div><button onclick="resetData()">🗑️ リセット</button></div>
     </div>
@@ -426,3 +428,51 @@ function activateTab(id) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
+
+
+async function registerPushSubscription() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    alert("このブラウザはPush通知に対応していません");
+    return;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array("BCKFf_nVNqtWztmc_8zmtIyiAWlRW_Q--wsdESzC_paGMvCZP_oOzE_FMNhEkpoRvUWY2_NMt63Cy2lxaY8au1U")
+  });
+
+  const uuid = localStorage.getItem("uuid") || crypto.randomUUID();
+  localStorage.setItem("uuid", uuid);
+
+  await fetch("https://keirin-pushserver.fly.dev/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uuid,
+      endpoint: subscription.endpoint,
+      public_key: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("p256dh")))),
+      auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey("auth"))))
+    })
+  });
+
+  alert("✅ 初期設定が完了しました！");
+}
+
+
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const pushBtn = document.getElementById("push-subscribe-btn");
+  if (pushBtn) {
+    pushBtn.addEventListener("click", registerPushSubscription);
+  }
+});
