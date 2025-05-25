@@ -29,3 +29,26 @@ self.addEventListener('activate', e => {
     })
   );
 });
+
+// ✅ Push通知を受け取ったときの処理を追加
+self.addEventListener('push', event => {
+  console.log('[ServiceWorker] Push イベント受信');
+
+  let data = {};
+  try {
+    data = event.data.json();
+  } catch (e) {
+    console.warn('Push通知のデータがJSONでありません:', e);
+  }
+
+  const title = data.title || "通知";
+  const options = {
+    body: data.body || "通知本文がありません",
+    icon: "./icon.png",
+    badge: "./icon.png",
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
