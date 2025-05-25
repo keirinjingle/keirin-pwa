@@ -213,40 +213,58 @@ function toggleAll(containerId, turnOn) {
   });
 }
 
+
 function sendPushRequest() {
-  const notifyMinutes = localStorage.getItem("notifyMinutes") || "1";
-  const selectedRaces = [];
+  const notifyMinutes = parseInt(localStorage.getItem("notifyMinutes") || "1");
+  const uuid = localStorage.getItem("uuid");
+  if (!uuid) {
+    alert("⚠️ まずPush購読をしてください（設定から）");
+    return;
+  }
+
+  const now = new Date();
+  const notifyList = [];
 
   for (const key in localStorage) {
     if (key.startsWith("toggle-") && localStorage.getItem(key) === "on") {
       const raceId = key.replace("toggle-", "");
-      selectedRaces.push(raceId);
+      const [venue, raceNum] = raceId.split("_");
+      const race = findRaceInfo(raceId);
+      if (!race) continue;
+
+      const [h, m] = race.closed_at.split(":").map(Number);
+      const notifyTime = new Date();
+      notifyTime.setHours(h, m - notifyMinutes, 0, 0);
+      if (notifyTime <= now) continue;
+
+      notifyList.push({
+        uuid,
+        venue,
+        race: parseInt(raceNum),
+        notify_at: notifyTime.toISOString().slice(0, 19)
+      });
     }
   }
 
-  if (selectedRaces.length === 0) {
-    alert("⚠️ 通知ONのレースがありません。");
+  if (notifyList.length === 0) {
+    alert("⚠️ 有効な通知予約がありません");
     return;
   }
 
-  fetch("https://your-fly-app.fly.dev/push", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      races: selectedRaces,
-      notifyMinutes: notifyMinutes
+  Promise.all(notifyList.map(n =>
+    fetch("https://keirin-pushserver.fly.dev/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(n)
     })
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert("✅ 通知依頼を送信しました！");
-      console.log("送信内容:", data);
-    })
+  ))
+    .then(() => alert(`✅ ${notifyList.length}件の通知依頼を送信しました`))
     .catch(err => {
       alert("❌ 通知依頼に失敗しました");
       console.error(err);
     });
 }
+
 
 function activateRaceByText() {
   const input = document.getElementById("race-input").value.trim();
@@ -406,5 +424,5 @@ function activateTab(id) {
 
 // ========== Service Worker ==========
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js');
+  navigator.serviceWorker.register('./sw.js');
 }
